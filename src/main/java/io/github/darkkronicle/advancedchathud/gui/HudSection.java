@@ -26,6 +26,7 @@ import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
 import io.github.darkkronicle.advancedchathud.tabs.CustomChatTab;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -48,10 +49,10 @@ import java.util.List;
 public class HudSection extends AdvancedChatScreenSection {
 
     private static final Identifier ADD_ICON =
-            new Identifier(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/add_window.png");
+        Identifier.of(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/add_window.png");
 
     private static final Identifier RESET_ICON =
-            new Identifier(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/reset_windows.png");
+        Identifier.of(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/reset_windows.png");
 
     private ContextMenu menu = null;
 
@@ -121,7 +122,7 @@ public class HudSection extends AdvancedChatScreenSection {
             TextBuilder data = new TextBuilder();
             try {
                 data.append(
-                        message.getTime().format(DateTimeFormatter.ofPattern(ConfigStorage.General.TIME_FORMAT.config.getStringValue())), Style.EMPTY.withFormatting(Formatting.AQUA)
+                    message.getTime().format(DateTimeFormatter.ofPattern(ConfigStorage.General.TIME_FORMAT.config.getStringValue())), Style.EMPTY.withFormatting(Formatting.AQUA)
                 );
             } catch (IllegalArgumentException e) {
                 AdvancedChatHud.LOGGER.log(Level.WARN, "Can't format time for context menu!", e);
@@ -139,6 +140,16 @@ public class HudSection extends AdvancedChatScreenSection {
                     InfoUtils.printActionbarMessage("advancedchathud.context.nothing");
                 });
             }
+            if (message.getOwner() != null) {
+                String messageOwnerName = message.getOwner().getEntry().getProfile().getName();
+
+                actions.put(
+                    Text.literal(StringUtils.translate("advancedchathud.context.messageowner").formatted(messageOwnerName)),
+                    (x, y) -> {
+                        getScreen().getChatField().setText("/msg %s ".formatted(messageOwnerName));
+                    }
+                );
+            }
             actions.put(Text.literal(StringUtils.translate("advancedchathud.context.copy")), (x, y) -> {
                 MinecraftClient.getInstance().keyboard.setClipboard(message.getOriginalText().getString());
                 InfoUtils.printActionbarMessage("advancedchathud.context.copied");
@@ -146,20 +157,61 @@ public class HudSection extends AdvancedChatScreenSection {
             actions.put(Text.literal(StringUtils.translate("advancedchathud.context.delete")), (x, y) -> {
                 HudChatMessageHolder.getInstance().removeChatMessage(message);
             });
-            if (message.getOwner() != null) {
-                actions.put(Text.literal(StringUtils.translate("advancedchathud.context.messageowner")), (x, y) -> {
-                    getScreen().getChatField().setText("/msg " + message.getOwner().getEntry().getProfile().getName() + " ");
-                });
-            }
         }
         ChatWindow hovered = WindowManager.getInstance().getHovered(mouseX, mouseY);
-        actions.put(Text.literal(StringUtils.translate("advancedchathud.context.removeallwindows")), (x, y) -> WindowManager.getInstance().reset());
-        actions.put(Text.literal(StringUtils.translate("advancedchathud.context.clearallmessages")), (x, y) -> WindowManager.getInstance().clear());
         if (hovered != null) {
+            actions.put(Text.literal(StringUtils.translate("advancedchathud.context.minimalist")), (x, y) -> hovered.toggleMinimalist());
             actions.put(Text.literal(StringUtils.translate("advancedchathud.context.duplicatewindow")), (x, y) -> WindowManager.getInstance().duplicateTab(hovered, x, y));
             actions.put(Text.literal(StringUtils.translate("advancedchathud.context.configurewindow")), (x, y) -> WindowManager.getInstance().configureTab(getScreen(), hovered));
-            actions.put(Text.literal(StringUtils.translate("advancedchathud.context.minimalist")), (x, y) -> hovered.toggleMinimalist());
         }
+        actions.put(
+            Text.literal(StringUtils.translate("advancedchathud.context.clearallmessages")),
+            (x, y) -> {
+                LinkedHashMap<Text, ContextMenu.ContextConsumer> cActions = new LinkedHashMap<>();
+                cActions.put(Text.literal(StringUtils.translate("advancedchathud.context.confirm")), (x1, y1) -> {});
+                cActions.put(Text.literal(StringUtils.translate("advancedchathud.context.yes")), (x1, y1) -> {
+                    WindowManager.getInstance().clear();
+                });
+                cActions.put(Text.literal(StringUtils.translate("advancedchathud.context.cancel")), (x1, y1) -> {
+                    menu = new ContextMenu(mouseX, mouseY, actions, () -> menu = null);
+                });
+
+                // Close the current menu
+                menu.getClose().run();
+
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {}
+
+                    menu = new ContextMenu(x, y, cActions, () -> menu = null);
+                }).start();
+            }
+        );
+        actions.put(
+            Text.literal(StringUtils.translate("advancedchathud.context.removeallwindows")),
+            (x, y) -> {
+                LinkedHashMap<Text, ContextMenu.ContextConsumer> cActions = new LinkedHashMap<>();
+                cActions.put(Text.literal(StringUtils.translate("advancedchathud.context.confirm")), (x1, y1) -> {});
+                cActions.put(Text.literal(StringUtils.translate("advancedchathud.context.yes")), (x1, y1) -> {
+                    WindowManager.getInstance().reset();
+                });
+                cActions.put(Text.literal(StringUtils.translate("advancedchathud.context.cancel")), (x1, y1) -> {
+                    menu = new ContextMenu(mouseX, mouseY, actions, () -> menu = null);
+                });
+
+                // Close the current menu
+                menu.getClose().run();
+
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {}
+
+                    menu = new ContextMenu(x, y, cActions, () -> menu = null);
+                }).start();
+            }
+        );
         menu = new ContextMenu(mouseX, mouseY, actions, () -> menu = null);
     }
 

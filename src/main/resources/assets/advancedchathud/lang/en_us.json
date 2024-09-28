@@ -145,6 +145,11 @@
 
   "advancedchathud.context.copied": "§aCopied",
 
+  "advancedchathud.context.confirm": "Are you sure?",
+  "advancedchathud.context.cancel": "Cancel",
+  "advancedchathud.context.yes": "Yes",
+  "advancedchathud.context.no": "No",
+
   "advancedchathud.context.copy": "Copy",
   "advancedchathud.context.delete": "Delete",
   "advancedchathud.context.minimalist": "Toggle Minimalist",
@@ -152,5 +157,5 @@
   "advancedchathud.context.clearallmessages": "Clear All Messages",
   "advancedchathud.context.duplicatewindow": "Duplicate Window",
   "advancedchathud.context.configurewindow": "Configure Window",
-  "advancedchathud.context.messageowner": "Reply"
+  "advancedchathud.context.messageowner": "Reply to %s"
 }

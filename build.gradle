@@ -1,10 +1,10 @@
 plugins {
-	id 'fabric-loom' version '1.6-SNAPSHOT'
+	id 'fabric-loom' version '1.7-SNAPSHOT'
 	id 'maven-publish'
 	id "io.freefair.lombok" version "8.6"
 }
 
-apply from: 'https://raw.githubusercontent.com/DarkKronicle/GradleScripts/main/gradle/publish.gradle'
+// apply from: 'https://raw.githubusercontent.com/DarkKronicle/GradleScripts/main/gradle/publish.gradle'
 
 sourceCompatibility = JavaVersion.VERSION_21
 targetCompatibility = JavaVersion.VERSION_21
@@ -30,9 +30,10 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	modImplementation "fi.dy.masa.malilib:malilib-fabric-1.20.6:${project.malilib_version}"
-	//modImplementation "com.github.DarkKronicle:AdvancedChatCore:${project.advancedchat_version}"
-	modImplementation "io.github.darkkronicle:AdvancedChatCore:1.20.6-1.5.10" // only used to build the mod locally
+	modImplementation "fi.dy.masa.malilib:malilib-fabric-1.21.1:${project.malilib_version}"
+	// modImplementation "com.github.DarkKronicle:AdvancedChatCore:${project.advancedchat_version}"
+	modImplementation "io.github.darkkronicle:AdvancedChatCore:1.21.1-1.6.0" // only used to build the mod locally
+	// modImplementation files("libs/AdvancedChatCore-1.21.1-1.6.0.jar") // only used to build the mod locally
 
 	modImplementation "com.github.DarkKronicle.Konstruct:addons:${project.konstruct_version}"
 	modImplementation "com.github.DarkKronicle.Konstruct:core:${project.konstruct_version}"
@@ -82,6 +83,6 @@ publishing {
 	// select the repositories you want to publish to
 	repositories {
 		// uncomment to publish to the local maven
-		// mavenLocal()
+		mavenLocal()
 	}
 }
