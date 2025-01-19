@@ -7,23 +7,30 @@
  */
 package io.github.darkkronicle.advancedchathud.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import fi.dy.masa.malilib.render.RenderUtils;
 import fi.dy.masa.malilib.util.StringUtils;
 import io.github.darkkronicle.advancedchatcore.chat.ChatMessage;
 import io.github.darkkronicle.advancedchatcore.config.ConfigStorage;
 import io.github.darkkronicle.advancedchatcore.interfaces.IJsonSave;
-import io.github.darkkronicle.advancedchatcore.util.*;
+import io.github.darkkronicle.advancedchatcore.util.Color;
+import io.github.darkkronicle.advancedchatcore.util.ColorUtil;
+import io.github.darkkronicle.advancedchatcore.util.Colors;
+import io.github.darkkronicle.advancedchatcore.util.EasingMethod;
+import io.github.darkkronicle.advancedchatcore.util.LimitedInteger;
+import io.github.darkkronicle.advancedchatcore.util.RawText;
+import io.github.darkkronicle.advancedchatcore.util.TextBuilder;
 import io.github.darkkronicle.advancedchathud.AdvancedChatHud;
 import io.github.darkkronicle.advancedchathud.HudChatMessage;
 import io.github.darkkronicle.advancedchathud.HudChatMessageHolder;
 import io.github.darkkronicle.advancedchathud.config.HudConfigStorage;
 import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import io.github.darkkronicle.advancedchathud.util.ScissorUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,7 +39,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -481,14 +488,26 @@ public class ChatWindow {
             // Close
             RenderUtils.color(1, 1, 1, 1);
             RenderUtils.bindTexture(X_ICON);
+            // icon,
+            // x + padding,
+            // y + padding,
+            // 0,
+            // 0,
+            // width - (padding * 2),
+            // height - (padding * 2),
+            // iconWidth,
+            // iconHeight,
+            // iconWidth,
+            // iconHeight
             context.drawTexture(
+                    RenderLayer::getGuiTextured,
                     X_ICON,
                     rightX - scaledBar + 1,
                     getActualY(newY - 1),
-                    scaledBar - 2,
-                    scaledBar - 2,
                     0,
                     0,
+                    scaledBar - 2,
+                    scaledBar - 2,
                     32,
                     32,
                     32,
@@ -498,13 +517,14 @@ public class ChatWindow {
             RenderUtils.color(1, 1, 1, 1);
             RenderUtils.bindTexture(RESIZE_ICON);
             context.drawTexture(
+                    RenderLayer::getGuiTextured,
                     RESIZE_ICON,
                     rightX - scaledBar * 2 + 2,
                     getActualY(newY - 1),
-                    scaledBar - 2,
-                    scaledBar - 2,
                     0,
                     0,
+                    scaledBar - 2,
+                    scaledBar - 2,
                     32,
                     32,
                     32,
@@ -513,13 +533,14 @@ public class ChatWindow {
             // Visibility
             RenderUtils.bindTexture(visibility.getTexture());
             context.drawTexture(
+                    RenderLayer::getGuiTextured,
                     visibility.getTexture(),
                     rightX - scaledBar * 3 + 3,
                     getActualY(newY - 1),
-                    scaledBar - 2,
-                    scaledBar - 2,
                     0,
                     0,
+                    scaledBar - 2,
+                    scaledBar - 2,
                     32,
                     32,
                     32,
@@ -527,7 +548,22 @@ public class ChatWindow {
 
             double mouseX = client.mouse.getX() / 2;
             double mouseY = client.mouse.getY() / 2;
-            if (isMouseOverVisibility(mouseX, mouseY)) {
+
+            if (isMouseOverClose(mouseX, mouseY)) {
+                context.drawCenteredTextWithShadow(
+                        client.textRenderer,
+                        "Close",
+                        (int) (mouseX / getScale() + 4),
+                        (int) (mouseY / getScale() - 16),
+                        Colors.getInstance().getColorOrWhite("white").color());
+            } else if (isMouseOverResize(mouseX, mouseY)) {
+                context.drawCenteredTextWithShadow(
+                        client.textRenderer,
+                        "Resize",
+                        (int) (mouseX / getScale() + 4),
+                        (int) (mouseY / getScale() - 16),
+                        Colors.getInstance().getColorOrWhite("white").color());
+            } else if (isMouseOverVisibility(mouseX, mouseY)) {
                 context.drawCenteredTextWithShadow(
                         client.textRenderer,
                         visibility.getDisplayName(),
@@ -678,9 +714,11 @@ public class ChatWindow {
             }
             int headY = getActualY(y);
             context.drawTexture(
+                    RenderLayer::getGuiTextured,
                     line.getParent().getOwner().getTexture(), headX, headY, 8, 8, 8, 8, 8, 8, 64, 64);
             context.drawTexture(
-                    line.getParent().getOwner().getTexture(), headX, headY, 8, 8, 40, 8, 8, 8, 64, 64);
+                    RenderLayer::getGuiTextured,
+                    line.getParent().getOwner().getTexture(), headX, headY, 40, 8, 8, 8, 8, 8, 64, 64);
             RenderSystem.setShaderColor(1, 1, 1, 1);
         }
         context.drawTextWithShadow(
@@ -850,6 +888,17 @@ public class ChatWindow {
         return true;
     }
 
+    public boolean isMouseOverClose(double mouseX, double mouseY) {
+        int x = getConvertedX();
+        int y = getConvertedY();
+        int width = getConvertedWidth();
+        int height = getConvertedHeight();
+        return (isMouseOver(mouseX, mouseY)
+                && mouseX >= x + width - (getScaledBarHeight() * 1)
+                && mouseX <= x + width - (getScaledBarHeight() * 0)
+                && mouseY <= y - height);
+    }
+
     public boolean isMouseOverResize(double mouseX, double mouseY) {
         int x = getConvertedX();
         int y = getConvertedY();
@@ -857,7 +906,7 @@ public class ChatWindow {
         int height = getConvertedHeight();
         return (isMouseOver(mouseX, mouseY)
                 && mouseX >= x + width - (getScaledBarHeight() * 2)
-                && mouseX <= x + width - (getScaledBarHeight())
+                && mouseX <= x + width - (getScaledBarHeight() * 1)
                 && mouseY <= y - height);
     }
 
