@@ -18,7 +18,6 @@ import io.github.darkkronicle.advancedchathud.itf.IChatHud;
 import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundEvents;
 
 public class TabButton extends CleanButton {
@@ -37,7 +36,7 @@ public class TabButton extends CleanButton {
     }
 
     @Override
-    public void render(int mouseX, int mouseY, boolean unused, DrawContext context) {
+    public void render(DrawContext context, int mouseX, int mouseY, boolean unused) {
         int relMX = mouseX - x;
         int relMY = mouseY - y;
         hovered = relMX >= 0 && relMX <= width && relMY >= 0 && relMY <= height;
@@ -59,18 +58,13 @@ public class TabButton extends CleanButton {
             color = new Color(color.red() / 2, color.green() / 2, color.blue() / 2, 100);
         }
 
-        RenderUtils.drawRect(x, y, width, height, color.color());
+        RenderUtils.drawRect(context, x, y, width, height, color.color()); // TODO: See if this is correct
 
-        drawStringWithShadow(
-                x + PADDING, y + PADDING, selected ? WHITE : GRAY, displayString, context);
+        drawStringWithShadow(context, x + PADDING, y + PADDING, selected ? WHITE : GRAY, displayString);
+
         if (tab.isShowUnread() && tab.getUnread() > 0) {
             String unread = TextUtil.toSuperscript(Math.min(tab.getUnread(), 99));
-            drawCenteredString(
-                    x + width - ((UNREAD_WIDTH + PADDING) / 2) - 1,
-                    y + PADDING,
-                    RED,
-                    unread,
-                    context);
+            drawCenteredString(context, x + width - ((UNREAD_WIDTH + PADDING) / 2) - 1, y + PADDING, RED, unread);
         }
     }
 

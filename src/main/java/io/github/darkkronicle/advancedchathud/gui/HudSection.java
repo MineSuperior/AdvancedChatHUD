@@ -111,7 +111,7 @@ public class HudSection extends AdvancedChatScreenSection {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float partialTicks) {
         if (menu != null) {
-            menu.render(mouseX, mouseY, true, context);
+            menu.render(context, mouseX, mouseY, true);
         }
     }
 

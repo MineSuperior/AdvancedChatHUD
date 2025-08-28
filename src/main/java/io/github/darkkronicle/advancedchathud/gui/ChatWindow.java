@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import fi.dy.masa.malilib.render.RenderUtils;
@@ -37,6 +38,7 @@ import lombok.Setter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.render.RenderLayer;
@@ -332,8 +334,8 @@ public class ChatWindow {
             scrolledHeight = totalHeight;
         }
 
-        context.getMatrices().push();
-        context.getMatrices().scale((float) getScale(), (float) getScale(), 1);
+        context.getMatrices().pushMatrix();
+        context.getMatrices().scale((float) getScale(), (float) getScale()); // TODO: See if this is right
 
         int lines = 0;
         int currentHeight = 0;
@@ -486,65 +488,57 @@ public class ChatWindow {
                     tab.getBorderColor().color());
 
             // Close
-            RenderUtils.color(1, 1, 1, 1);
-            RenderUtils.bindTexture(X_ICON);
-            // icon,
-            // x + padding,
-            // y + padding,
-            // 0,
-            // 0,
-            // width - (padding * 2),
-            // height - (padding * 2),
-            // iconWidth,
-            // iconHeight,
-            // iconWidth,
-            // iconHeight
+            // RenderUtils.color(1, 1, 1, 1); // TODO: See if this was required
+            // RenderUtils.bindTexture(X_ICON); // TODO: See if this was required
             context.drawTexture(
-                    RenderLayer::getGuiTextured,
-                    X_ICON,
-                    rightX - scaledBar + 1,
-                    getActualY(newY - 1),
-                    0,
-                    0,
-                    scaledBar - 2,
-                    scaledBar - 2,
-                    32,
-                    32,
-                    32,
-                    32);
+                RenderPipelines.GUI_TEXTURED,
+                X_ICON,
+                rightX - scaledBar + 1, // x
+                getActualY(newY - 1), // y
+                0, // u
+                0, // v
+                scaledBar - 2, // width
+                scaledBar - 2, // height
+                32, // regionWidth
+                32, // regionHeight
+                32, // textureWidth
+                32 // textureHeight
+            );
 
             // Resize
-            RenderUtils.color(1, 1, 1, 1);
-            RenderUtils.bindTexture(RESIZE_ICON);
+            // RenderUtils.color(1, 1, 1, 1); // TODO: See if this was required
+            // RenderUtils.bindTexture(RESIZE_ICON); // TODO: See if this was required
             context.drawTexture(
-                    RenderLayer::getGuiTextured,
-                    RESIZE_ICON,
-                    rightX - scaledBar * 2 + 2,
-                    getActualY(newY - 1),
-                    0,
-                    0,
-                    scaledBar - 2,
-                    scaledBar - 2,
-                    32,
-                    32,
-                    32,
-                    32);
+                RenderPipelines.GUI_TEXTURED,
+                RESIZE_ICON,
+                rightX - scaledBar * 2 + 2, // x
+                getActualY(newY - 1), // y
+                0, // u
+                0, // v
+                scaledBar - 2, // width
+                scaledBar - 2, // height
+                32, // regionWidth
+                32, // regionHeight
+                32, // textureWidth
+                32 // textureHeight
+            );
 
             // Visibility
-            RenderUtils.bindTexture(visibility.getTexture());
+            // RenderUtils.bindTexture(visibility.getTexture()); // TODO: See if this was required
             context.drawTexture(
-                    RenderLayer::getGuiTextured,
-                    visibility.getTexture(),
-                    rightX - scaledBar * 3 + 3,
-                    getActualY(newY - 1),
-                    0,
-                    0,
-                    scaledBar - 2,
-                    scaledBar - 2,
-                    32,
-                    32,
-                    32,
-                    32);
+                RenderPipelines.GUI_TEXTURED,
+                visibility.getTexture(),
+                rightX - scaledBar * 3 + 3, // x
+                getActualY(newY - 1), // y
+                0, // u
+                0, // v
+                scaledBar - 2, // regionWidth
+                scaledBar - 2, // regionHeight
+                32, // textureWidth
+                32, // textureHeight
+                32, // regionWidth
+                32 // regionHeight
+            );
 
             double mouseX = client.mouse.getX() / 2;
             double mouseY = client.mouse.getY() / 2;
@@ -595,7 +589,7 @@ public class ChatWindow {
                     10,
                     Colors.getInstance().getColorOrWhite("white").color());
         }
-        context.getMatrices().pop();
+        context.getMatrices().popMatrix();
     }
 
     private void drawLine(
@@ -702,10 +696,10 @@ public class ChatWindow {
                 && line.getParent().getOwner() != null
                 && HudConfigStorage.General.CHAT_HEADS.config.getBooleanValue()) {
             // Allow head to be transparent
-            RenderUtils.setupBlend();
+            // RenderUtils.setupBlend(); // TODO: See if this was required
             // Draw head
-            RenderSystem.setShaderColor(1, 1, 1, applied);
-            RenderSystem.setShaderTexture(0, line.getParent().getOwner().getTexture());
+            // RenderSystem.setShaderColor(1, 1, 1, applied); // TODO: See if this was required
+            // RenderSystem.setShaderTexture(0, line.getParent().getOwner().getTexture()); // TODO: See if this was required
             int headX;
             if (renderRight) {
                 headX = pRX + 2;
@@ -714,15 +708,43 @@ public class ChatWindow {
             }
             int headY = getActualY(y);
             context.drawTexture(
-                    RenderLayer::getGuiTextured,
-                    line.getParent().getOwner().getTexture(), headX, headY, 8, 8, 8, 8, 8, 8, 64, 64);
+                RenderPipelines.GUI_TEXTURED,
+                line.getParent().getOwner().getTexture(),
+                headX, // x
+                headY, // y
+                8, // u
+                8, // v
+                8, // width
+                8, // height
+                8, // regionWidth
+                8, // regionHeight
+                64, // textureWidth
+                64 // textureHeight
+            );
             context.drawTexture(
-                    RenderLayer::getGuiTextured,
-                    line.getParent().getOwner().getTexture(), headX, headY, 40, 8, 8, 8, 8, 8, 64, 64);
-            RenderSystem.setShaderColor(1, 1, 1, 1);
+                RenderPipelines.GUI_TEXTURED,
+                line.getParent().getOwner().getTexture(),
+                headX, // x
+                headY, // y
+                40, // u
+                8, // v
+                8, // width
+                8, // height
+                8, // regionWidth
+                8, // regionHeight
+                64, // textureWidth
+                64 // textureHeight
+            );
+
+            // RenderSystem.setShaderColor(1, 1, 1, 1); // TODO: See if this was required
         }
         context.drawTextWithShadow(
-                client.textRenderer, render.asOrderedText(), renderRight ? pRX - lineWidth : pLX, getActualY(y) + 1, text.color());
+            client.textRenderer,
+            render.asOrderedText(),
+            renderRight ? pRX - lineWidth : pLX,
+            getActualY(y) + 1,
+            text.color()
+        );
     }
 
     public Style getText(double mouseX, double mouseY) {
