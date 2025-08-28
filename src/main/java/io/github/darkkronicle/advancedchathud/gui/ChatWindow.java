@@ -7,32 +7,41 @@
  */
 package io.github.darkkronicle.advancedchathud.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import com.google.gson.JsonObject;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import fi.dy.masa.malilib.render.RenderUtils;
 import fi.dy.masa.malilib.util.StringUtils;
 import io.github.darkkronicle.advancedchatcore.chat.ChatMessage;
 import io.github.darkkronicle.advancedchatcore.config.ConfigStorage;
 import io.github.darkkronicle.advancedchatcore.interfaces.IJsonSave;
-import io.github.darkkronicle.advancedchatcore.util.*;
+import io.github.darkkronicle.advancedchatcore.util.Color;
+import io.github.darkkronicle.advancedchatcore.util.ColorUtil;
+import io.github.darkkronicle.advancedchatcore.util.Colors;
+import io.github.darkkronicle.advancedchatcore.util.EasingMethod;
+import io.github.darkkronicle.advancedchatcore.util.LimitedInteger;
+import io.github.darkkronicle.advancedchatcore.util.RawText;
+import io.github.darkkronicle.advancedchatcore.util.TextBuilder;
 import io.github.darkkronicle.advancedchathud.AdvancedChatHud;
 import io.github.darkkronicle.advancedchathud.HudChatMessage;
 import io.github.darkkronicle.advancedchathud.HudChatMessageHolder;
 import io.github.darkkronicle.advancedchathud.config.HudConfigStorage;
 import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import io.github.darkkronicle.advancedchathud.util.ScissorUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -78,10 +87,10 @@ public class ChatWindow {
     @Getter private AbstractChatTab tab;
 
     private static final Identifier X_ICON =
-            new Identifier(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/x_icon.png");
+        Identifier.of(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/x_icon.png");
 
     private static final Identifier RESIZE_ICON =
-            new Identifier(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/resize_icon.png");
+        Identifier.of(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/resize_icon.png");
 
     public ChatWindow(AbstractChatTab tab) {
         this.client = MinecraftClient.getInstance();
@@ -312,6 +321,10 @@ public class ChatWindow {
             return;
         }
 
+        if (client.options.hudHidden) {
+            return;
+        }
+
         int totalLines = getTotalLines();
 
         boolean chatFocused = visibility == HudConfigStorage.Visibility.ALWAYS || focused;
@@ -321,8 +334,8 @@ public class ChatWindow {
             scrolledHeight = totalHeight;
         }
 
-        context.getMatrices().push();
-        context.getMatrices().scale((float) getScale(), (float) getScale(), 1);
+        context.getMatrices().pushMatrix();
+        context.getMatrices().scale((float) getScale(), (float) getScale()); // TODO: See if this is right
 
         int lines = 0;
         int currentHeight = 0;
@@ -475,55 +488,76 @@ public class ChatWindow {
                     tab.getBorderColor().color());
 
             // Close
-            RenderUtils.color(1, 1, 1, 1);
-            RenderUtils.bindTexture(X_ICON);
+            // RenderUtils.color(1, 1, 1, 1); // TODO: See if this was required
+            // RenderUtils.bindTexture(X_ICON); // TODO: See if this was required
             context.drawTexture(
-                    X_ICON,
-                    rightX - scaledBar + 1,
-                    getActualY(newY - 1),
-                    scaledBar - 2,
-                    scaledBar - 2,
-                    0,
-                    0,
-                    32,
-                    32,
-                    32,
-                    32);
+                RenderPipelines.GUI_TEXTURED,
+                X_ICON,
+                rightX - scaledBar + 1, // x
+                getActualY(newY - 1), // y
+                0, // u
+                0, // v
+                scaledBar - 2, // width
+                scaledBar - 2, // height
+                32, // regionWidth
+                32, // regionHeight
+                32, // textureWidth
+                32 // textureHeight
+            );
 
             // Resize
-            RenderUtils.color(1, 1, 1, 1);
-            RenderUtils.bindTexture(RESIZE_ICON);
+            // RenderUtils.color(1, 1, 1, 1); // TODO: See if this was required
+            // RenderUtils.bindTexture(RESIZE_ICON); // TODO: See if this was required
             context.drawTexture(
-                    RESIZE_ICON,
-                    rightX - scaledBar * 2 + 2,
-                    getActualY(newY - 1),
-                    scaledBar - 2,
-                    scaledBar - 2,
-                    0,
-                    0,
-                    32,
-                    32,
-                    32,
-                    32);
+                RenderPipelines.GUI_TEXTURED,
+                RESIZE_ICON,
+                rightX - scaledBar * 2 + 2, // x
+                getActualY(newY - 1), // y
+                0, // u
+                0, // v
+                scaledBar - 2, // width
+                scaledBar - 2, // height
+                32, // regionWidth
+                32, // regionHeight
+                32, // textureWidth
+                32 // textureHeight
+            );
 
             // Visibility
-            RenderUtils.bindTexture(visibility.getTexture());
+            // RenderUtils.bindTexture(visibility.getTexture()); // TODO: See if this was required
             context.drawTexture(
-                    visibility.getTexture(),
-                    rightX - scaledBar * 3 + 3,
-                    getActualY(newY - 1),
-                    scaledBar - 2,
-                    scaledBar - 2,
-                    0,
-                    0,
-                    32,
-                    32,
-                    32,
-                    32);
+                RenderPipelines.GUI_TEXTURED,
+                visibility.getTexture(),
+                rightX - scaledBar * 3 + 3, // x
+                getActualY(newY - 1), // y
+                0, // u
+                0, // v
+                scaledBar - 2, // regionWidth
+                scaledBar - 2, // regionHeight
+                32, // textureWidth
+                32, // textureHeight
+                32, // regionWidth
+                32 // regionHeight
+            );
 
             double mouseX = client.mouse.getX() / 2;
             double mouseY = client.mouse.getY() / 2;
-            if (isMouseOverVisibility(mouseX, mouseY)) {
+
+            if (isMouseOverClose(mouseX, mouseY)) {
+                context.drawCenteredTextWithShadow(
+                        client.textRenderer,
+                        "Close",
+                        (int) (mouseX / getScale() + 4),
+                        (int) (mouseY / getScale() - 16),
+                        Colors.getInstance().getColorOrWhite("white").color());
+            } else if (isMouseOverResize(mouseX, mouseY)) {
+                context.drawCenteredTextWithShadow(
+                        client.textRenderer,
+                        "Resize",
+                        (int) (mouseX / getScale() + 4),
+                        (int) (mouseY / getScale() - 16),
+                        Colors.getInstance().getColorOrWhite("white").color());
+            } else if (isMouseOverVisibility(mouseX, mouseY)) {
                 context.drawCenteredTextWithShadow(
                         client.textRenderer,
                         visibility.getDisplayName(),
@@ -555,7 +589,7 @@ public class ChatWindow {
                     10,
                     Colors.getInstance().getColorOrWhite("white").color());
         }
-        context.getMatrices().pop();
+        context.getMatrices().popMatrix();
     }
 
     private void drawLine(
@@ -662,10 +696,10 @@ public class ChatWindow {
                 && line.getParent().getOwner() != null
                 && HudConfigStorage.General.CHAT_HEADS.config.getBooleanValue()) {
             // Allow head to be transparent
-            RenderUtils.setupBlend();
+            // RenderUtils.setupBlend(); // TODO: See if this was required
             // Draw head
-            RenderSystem.setShaderColor(1, 1, 1, applied);
-            RenderSystem.setShaderTexture(0, line.getParent().getOwner().getTexture());
+            // RenderSystem.setShaderColor(1, 1, 1, applied); // TODO: See if this was required
+            // RenderSystem.setShaderTexture(0, line.getParent().getOwner().getTexture()); // TODO: See if this was required
             int headX;
             if (renderRight) {
                 headX = pRX + 2;
@@ -674,13 +708,43 @@ public class ChatWindow {
             }
             int headY = getActualY(y);
             context.drawTexture(
-                    line.getParent().getOwner().getTexture(), headX, headY, 8, 8, 8, 8, 8, 8, 64, 64);
+                RenderPipelines.GUI_TEXTURED,
+                line.getParent().getOwner().getTexture(),
+                headX, // x
+                headY, // y
+                8, // u
+                8, // v
+                8, // width
+                8, // height
+                8, // regionWidth
+                8, // regionHeight
+                64, // textureWidth
+                64 // textureHeight
+            );
             context.drawTexture(
-                    line.getParent().getOwner().getTexture(), headX, headY, 8, 8, 40, 8, 8, 8, 64, 64);
-            RenderSystem.setShaderColor(1, 1, 1, 1);
+                RenderPipelines.GUI_TEXTURED,
+                line.getParent().getOwner().getTexture(),
+                headX, // x
+                headY, // y
+                40, // u
+                8, // v
+                8, // width
+                8, // height
+                8, // regionWidth
+                8, // regionHeight
+                64, // textureWidth
+                64 // textureHeight
+            );
+
+            // RenderSystem.setShaderColor(1, 1, 1, 1); // TODO: See if this was required
         }
         context.drawTextWithShadow(
-                client.textRenderer, render.asOrderedText(), renderRight ? pRX - lineWidth : pLX, getActualY(y) + 1, text.color());
+            client.textRenderer,
+            render.asOrderedText(),
+            renderRight ? pRX - lineWidth : pLX,
+            getActualY(y) + 1,
+            text.color()
+        );
     }
 
     public Style getText(double mouseX, double mouseY) {
@@ -846,6 +910,17 @@ public class ChatWindow {
         return true;
     }
 
+    public boolean isMouseOverClose(double mouseX, double mouseY) {
+        int x = getConvertedX();
+        int y = getConvertedY();
+        int width = getConvertedWidth();
+        int height = getConvertedHeight();
+        return (isMouseOver(mouseX, mouseY)
+                && mouseX >= x + width - (getScaledBarHeight() * 1)
+                && mouseX <= x + width - (getScaledBarHeight() * 0)
+                && mouseY <= y - height);
+    }
+
     public boolean isMouseOverResize(double mouseX, double mouseY) {
         int x = getConvertedX();
         int y = getConvertedY();
@@ -853,7 +928,7 @@ public class ChatWindow {
         int height = getConvertedHeight();
         return (isMouseOver(mouseX, mouseY)
                 && mouseX >= x + width - (getScaledBarHeight() * 2)
-                && mouseX <= x + width - (getScaledBarHeight())
+                && mouseX <= x + width - (getScaledBarHeight() * 1)
                 && mouseY <= y - height);
     }
 

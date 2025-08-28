@@ -306,7 +306,10 @@ public class HudConfigStorage implements IConfigHandler {
                 }
 
                 ConfigStorage.readOptions(
-                        root, General.NAME, (List<SaveableConfig<?>>) General.OPTIONS);
+                        root,
+                        General.NAME,
+                        (List<SaveableConfig<?>>) (List<?>) General.OPTIONS
+                    );
 
                 int version = JsonUtils.getIntegerOrDefault(root, "configVersion", 0);
             }
@@ -321,7 +324,10 @@ public class HudConfigStorage implements IConfigHandler {
             JsonObject root = new JsonObject();
 
             ConfigStorage.writeOptions(
-                    root, General.NAME, (List<SaveableConfig<?>>) General.OPTIONS);
+                root,
+                General.NAME,
+                (List<SaveableConfig<?>>) (List<?>) General.OPTIONS
+            );
 
             root.add("maintab", tabJson.save(MAIN_TAB));
 
@@ -419,9 +425,9 @@ public class HudConfigStorage implements IConfigHandler {
 
         Visibility(String configString) {
             this.texture =
-                    new Identifier(
-                            AdvancedChatHud.MOD_ID,
-                            "textures/gui/chatwindow/" + configString + ".png");
+                Identifier.of(
+                    AdvancedChatHud.MOD_ID,
+                    "textures/gui/chatwindow/" + configString + ".png");
             this.configString = configString;
         }
 
